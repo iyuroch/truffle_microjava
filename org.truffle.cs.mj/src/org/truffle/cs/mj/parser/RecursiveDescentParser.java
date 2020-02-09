@@ -42,18 +42,24 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.truffle.cs.mj.nodes.MJBinary;
 import org.truffle.cs.mj.nodes.MJBinaryFactory;
 import org.truffle.cs.mj.nodes.MJBlock;
+import org.truffle.cs.mj.nodes.MJCallable;
 import org.truffle.cs.mj.nodes.MJConstNodeGen;
 import org.truffle.cs.mj.nodes.MJExpr;
 import org.truffle.cs.mj.nodes.MJMethod;
 import org.truffle.cs.mj.nodes.MJPrint;
+import org.truffle.cs.mj.nodes.MJReadVar;
 import org.truffle.cs.mj.nodes.MJStatement;
+import org.truffle.cs.mj.nodes.MJWriteVar;
+
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotKind;
 
 public final class RecursiveDescentParser {
     /** Maximum number of global variables per program */
@@ -289,6 +295,7 @@ public final class RecursiveDescentParser {
 
     /** ConstDecl = "final" Type ident "=" ( number | charConst ) ";" . */
     private void ConstDecl() {
+        // TODO: implement const
         check(final_);
         Type();
         check(ident);
@@ -305,12 +312,18 @@ public final class RecursiveDescentParser {
 
     /** VarDecl = Type ident { "," ident } ";" . */
     private void VarDecl() {
-        Type();
+        FrameSlotKind type = Type();
         check(ident);
+        String name = t.str;
+        currentFrameDescriptor.addFrameSlot(name, type);
+
         while (sym == comma) {
             scan();
             check(ident);
+            name = t.str;
+            currentFrameDescriptor.addFrameSlot(name, type);
         }
+
         check(semicolon);
     }
 
@@ -360,19 +373,21 @@ public final class RecursiveDescentParser {
 
     private MJMethod MethodDecl() {
         currentFrameDescriptor = new FrameDescriptor();
+        FrameSlotKind returnType = null;
         if (sym == ident) {
-            Type();
+            returnType = Type();
         } else if (sym == void_) {
+            // if return type is void
             scan();
         } else {
             throw new Error("Method declaration");
         }
         check(ident);
-        String name = t.str;
+        String methodName = t.str;
 
         check(lpar);
         if (sym == ident) {
-            parameterNames = FormPars();
+            FormPars();
         }
         check(rpar);
         while (sym == ident) {
@@ -380,7 +395,7 @@ public final class RecursiveDescentParser {
         }
 
         MJBlock block = Block();
-        currentFun = new MJMethod(name, block, currentFrameDescriptor);
+        currentFun = new MJMethod(methodName, block, currentFrameDescriptor, returnType);
 
         functions.add(currentFun);
         parameterNames = null;
@@ -388,27 +403,39 @@ public final class RecursiveDescentParser {
     }
 
     /** FormPars = Type ident { "," Type ident } . */
-    private ArrayList<String> FormPars() {
-        ArrayList<String> parNames = new ArrayList<String>();
-        Type();
+    private void FormPars() {
+        FrameSlotKind type = Type();
         check(ident);
-        parNames.add(t.str);
+        String name = t.str;
+        currentFrameDescriptor.addFrameSlot(name, type);
+
         while (sym == comma) {
             scan();
-            Type();
+            type = Type();
             check(ident);
-            parNames.add(t.str);
+            name = t.str;
+            currentFrameDescriptor.addFrameSlot(name, type);
         }
-        return parNames;
     }
 
-    /** Type = ident . */
-    private void Type() {
+    /**
+     * Type = ident .
+     *
+     * @return FrameSlotKind
+     */
+    private FrameSlotKind Type() {
         check(ident);
+        String typeName = t.str.substring(0, 1).toUpperCase() + t.str.substring(1);
+
+        FrameSlotKind type = FrameSlotKind.valueOf(typeName);
+        // this is for array
+        // TODO: implement arrays
         if (sym == lbrack) {
             scan();
             check(rbrack);
         }
+
+        return type;
     }
 
     /** Block = "{" { Statement } "}" . */
@@ -452,11 +479,14 @@ public final class RecursiveDescentParser {
             // ----- Designator ( Assignop Expr | ActPars | "++" | "--" ) ";"
             case ident:
                 String des = Designator();
+
                 switch (sym) {
                     case assign:
-                        Assignop();
-                        Expr();
+                        FrameSlot slot = currentFrameDescriptor.findFrameSlot(des);
+                        scan();
+                        statement = new MJWriteVar(Expr(), slot);
                         break;
+                    // TODO: add this
                     case plusas:
                     case minusas:
                     case timesas:
@@ -465,7 +495,14 @@ public final class RecursiveDescentParser {
                         throw new Error("Unimplemented");
                     // break;
                     case lpar:
-                        ActPars();
+                        // This is case when we have custom function call
+                        // need to check if we have this method
+                        // and if yes - add arguments to it
+                        for (MJMethod method : functions) {
+                            if (method.getName().equals(des)) {
+                                statement = new MJCallable(ActPars(), method);
+                            }
+                        }
                         break;
                     case pplus:
                         scan();
@@ -546,18 +583,23 @@ public final class RecursiveDescentParser {
                 scan();
                 break;
             default:
-                throw new Error("Invalid start...");
+                throw new Error("Hey");
         }
 
         return statement;
     }
 
-    /** ActPars = "(" [ Expr { "," Expr } ] ")" . */
-    private void ActPars() {
+    /**
+     * ActPars = "(" [ Expr { "," Expr } ] ")" .
+     *
+     * @return
+     */
+    private List<MJExpr> ActPars() {
+        List<MJExpr> arguments = new ArrayList<>();
         check(lpar);
         if (firstExpr.contains(sym)) {
             for (;;) {
-                Expr();
+                arguments.add(Expr());
                 if (sym == comma) {
                     scan();
                 } else {
@@ -566,6 +608,7 @@ public final class RecursiveDescentParser {
             }
         }
         check(rpar);
+        return arguments;
     }
 
     /** Condition = CondTerm { "||" CondTerm } . */
@@ -697,12 +740,12 @@ public final class RecursiveDescentParser {
                 check(rpar);
                 return null;
             case ident:
-                // check for variable here
                 String varname = Designator();
                 if (sym == lpar) {
                     ActPars();
                 } else {
-                    // normal variable node
+                    FrameSlot slot = currentFrameDescriptor.findFrameSlot(varname);
+                    factor = new MJReadVar(slot);
                 }
                 break;
             case number:

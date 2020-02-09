@@ -21,7 +21,8 @@ public class MJRuntime {
 // parseRD(ifProgram);
 // parseRDBenchmark(divAlgorithm);
 // parseRD(mySample);
-        parseRD(mjExpr_1);
+// parseRD(mjProgramRD);
+        parseRD(mjFunCall);
     }
 
     static String mySample = "program Sample {" + "void main() {print(0);print(1);} " + "}";
@@ -30,9 +31,10 @@ public class MJRuntime {
 
     static String mjExpr = "program Sample {" + "void main() {" + "    print(4 + 2);" + "  }" + "}";
 
+    static String mjFunCall = "program Sample {" + "" + "void prinun(int i) {print(i);}" + "void main() {" + "print(1); " + "prinun(5);" + "}" + "}";
     static String mjProgramRD = ""//
                     + "program Sample { "//
-                    + "void main() int i; int j; { \n"//
+                    + "void main(int i) int j; { \n"//
                     + "                 print(0);"//
                     + "                 print(12); \n" //
                     + "                 i = 3;\n"//
@@ -121,7 +123,7 @@ public class MJRuntime {
         TruffleRuntime runtime = Truffle.getRuntime();
 // System.out.println("Calling main function...");
         CallTarget callTarget = runtime.createCallTarget(parser.getMain());
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 1; i++) {
             callTarget.call();
         }
 // callTarget.call();

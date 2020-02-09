@@ -1,13 +1,25 @@
 package org.truffle.cs.mj.nodes;
 
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public abstract class MJReadVar extends MJExpr {
+public class MJReadVar extends MJExpr {
+
+    FrameSlot slot;
+
+    public MJReadVar(FrameSlot slot) {
+        super();
+        this.slot = slot;
+    }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return frame.getObject(this.slot);
+        } catch (FrameSlotTypeException e) {
+            throw new Error(e);
+        }
     }
 
 }
