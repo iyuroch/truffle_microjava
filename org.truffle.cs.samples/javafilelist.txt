@@ -1,0 +1,10 @@
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/Abs.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/Add.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/Arg.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/AssumptionArg.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/Expression.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/ExpressionFunction.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/LiveCoding.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/PlainAST/PlainAST.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/RunningExamples.java
+/home/iyuroch/Main/study/comp_inter/lviv_01_2020_GraalVMCourse/Source/trufflecourse/code/org.truffle.cs.samples/src/org/truffle/cs/samples/SimplestPEA.java
