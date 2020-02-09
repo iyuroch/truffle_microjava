@@ -22,7 +22,7 @@ public class MJRuntime {
 // parseRDBenchmark(divAlgorithm);
 // parseRD(mySample);
 // parseRD(mjProgramRD);
-        parseRD(mjFunCall);
+        parseRD(ifProgram);
     }
 
     static String mySample = "program Sample {" + "void main() {print(0);print(1);} " + "}";
@@ -45,6 +45,16 @@ public class MJRuntime {
                     + "         }\n"//
                     + "}";
 
+    static String ifProgram = "program Sample {"//
+                    + "             void main(int i,int j){"//
+                    + "                 if(i>j) {"//
+                    + "                     print(i);" //
+                    + "                 }else {"//
+                    + "                     print(j);"//
+                    + "                 }"//
+                    + "                 print(0);"//
+                    + "             }}";
+
     static String whileLoopRD = "program P {"//
                     + "             void foo(int i,int j) {print(i+j);}" //
                     + "             void main () int i;{ "//
@@ -56,7 +66,7 @@ public class MJRuntime {
                     + "                 }"//
                     + "             }"//
                     + "}";
-    static String ifProgram = "program P {"//
+    static String whileIfProgram = "program P {"//
                     + "             void foo(int i,int j) {"//
                     + "                 if(i>j) {"//
                     + "                     print(i);" //
@@ -124,7 +134,7 @@ public class MJRuntime {
 // System.out.println("Calling main function...");
         CallTarget callTarget = runtime.createCallTarget(parser.getMain());
         for (int i = 0; i < 1; i++) {
-            callTarget.call();
+            callTarget.call(2, 3);
         }
 // callTarget.call();
     }

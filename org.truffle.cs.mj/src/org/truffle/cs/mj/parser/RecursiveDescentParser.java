@@ -50,6 +50,7 @@ import org.truffle.cs.mj.nodes.MJBlock;
 import org.truffle.cs.mj.nodes.MJCallable;
 import org.truffle.cs.mj.nodes.MJConstNodeGen;
 import org.truffle.cs.mj.nodes.MJExpr;
+import org.truffle.cs.mj.nodes.MJIf;
 import org.truffle.cs.mj.nodes.MJMethod;
 import org.truffle.cs.mj.nodes.MJPrint;
 import org.truffle.cs.mj.nodes.MJReadVar;
@@ -519,13 +520,22 @@ public final class RecursiveDescentParser {
             case if_:
                 scan();
                 check(lpar);
-                Condition();
+                MJExpr condition = Condition();
                 check(rpar);
-                Statement();
+
+                check(lbrace);
+                MJStatement truePath = Statement();
+                check(rbrace);
+
+                MJStatement falsePath = null;
+
                 if (sym == else_) {
                     scan();
-                    Statement();
+                    check(lbrace);
+                    falsePath = Statement();
+                    check(rbrace);
                 }
+                statement = new MJIf(condition, truePath, falsePath);
                 break;
             // ----- "while" "(" Condition ")" Statement
             case while_:
@@ -592,7 +602,7 @@ public final class RecursiveDescentParser {
     /**
      * ActPars = "(" [ Expr { "," Expr } ] ")" .
      *
-     * @return
+     * @return List<MJExpr>
      */
     private List<MJExpr> ActPars() {
         List<MJExpr> arguments = new ArrayList<>();
@@ -612,50 +622,52 @@ public final class RecursiveDescentParser {
     }
 
     /** Condition = CondTerm { "||" CondTerm } . */
-    private void Condition() {
-        CondTerm();
+    private MJExpr Condition() {
+        MJExpr expr = CondTerm();
         while (sym == or) {
             scan();
-            CondTerm();
+            expr = MJBinaryFactory.OrOpNodeGen.create(expr, CondTerm());
         }
+        return expr;
     }
 
     /** CondTerm = CondFact { "&&" CondFact } . */
-    private void CondTerm() {
-        CondFact();
+    private MJExpr CondTerm() {
+        MJExpr expr = CondFact();
         while (sym == and) {
             scan();
-            CondFact();
+            expr = MJBinaryFactory.AndOpNodeGen.create(expr, CondFact());
         }
-
+        return expr;
     }
 
     /** CondFact = Expr Relop Expr . */
-    private void CondFact() {
-        Expr();
+    private MJExpr CondFact() {
+        MJExpr expr = Expr();
         CompOp comp = Relop();
         switch (comp) {
             case ne:
-                Expr();
+                expr = MJBinaryFactory.NEOpNodeGen.create(expr, Expr());
                 break;
             case lt:
-                Expr();
+                expr = MJBinaryFactory.LOpNodeGen.create(expr, Expr());
                 break;
             case le:
-                Expr();
+                expr = MJBinaryFactory.LEOpNodeGen.create(expr, Expr());
                 break;
             case eq:
-                Expr();
+                expr = MJBinaryFactory.EOpNodeGen.create(expr, Expr());
                 break;
             case ge:
-                Expr();
+                expr = MJBinaryFactory.GEOpNodeGen.create(expr, Expr());
                 break;
             case gt:
-                Expr();
+                expr = MJBinaryFactory.GOpNodeGen.create(expr, Expr());
                 break;
             default:
                 break;
         }
+        return expr;
     }
 
     /**
