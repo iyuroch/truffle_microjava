@@ -22,7 +22,9 @@ public class MJRuntime {
 // parseRDBenchmark(divAlgorithm);
 // parseRD(mySample);
 // parseRD(mjProgramRD);
-        parseRD(ifProgram);
+// parseRD(ifProgram);
+// parseRD(whileProgram);
+        parseRD(whileIfProgram);
     }
 
     static String mySample = "program Sample {" + "void main() {print(0);print(1);} " + "}";
@@ -78,8 +80,28 @@ public class MJRuntime {
                     + "             void main () int i;{ "//
                     + "                 i =0; "//
                     + "                 while(i<10) {"//
-                    + "                     i=i+1;"//
+                    + "                     i=i+1;" //
                     + "                     foo(i,5);" //
+                    + "                 }"//
+                    + "             }"//
+                    + "}";
+
+    static String whileProgram = "program P {"//
+                    + "             void main (){ "//
+                    + "                 while(1<2) {"//
+                    + "                     print(10);" //
+                    + "                 }"//
+                    + "             }"//
+                    + "}";
+
+    static String contbreakProgram = "program P {"//
+                    + "             void main () int i;{ " //
+                    + "                 i = 0;"//
+                    + "                 while(i<20) {" //
+                    + "                     if (i % 2) {" //
+                    + "                         continue;" //
+                    + "                     }"//
+                    + "                     print(10);" //
                     + "                 }"//
                     + "             }"//
                     + "}";
@@ -134,7 +156,7 @@ public class MJRuntime {
 // System.out.println("Calling main function...");
         CallTarget callTarget = runtime.createCallTarget(parser.getMain());
         for (int i = 0; i < 1; i++) {
-            callTarget.call(2, 3);
+            callTarget.call();
         }
 // callTarget.call();
     }

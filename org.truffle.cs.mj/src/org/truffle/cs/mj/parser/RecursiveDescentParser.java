@@ -54,7 +54,9 @@ import org.truffle.cs.mj.nodes.MJIf;
 import org.truffle.cs.mj.nodes.MJMethod;
 import org.truffle.cs.mj.nodes.MJPrint;
 import org.truffle.cs.mj.nodes.MJReadVar;
+import org.truffle.cs.mj.nodes.MJRepeat;
 import org.truffle.cs.mj.nodes.MJStatement;
+import org.truffle.cs.mj.nodes.MJWhile;
 import org.truffle.cs.mj.nodes.MJWriteVar;
 
 import com.oracle.truffle.api.CallTarget;
@@ -474,6 +476,7 @@ public final class RecursiveDescentParser {
      */
     private MJStatement Statement() {
         MJStatement statement = null;
+        MJExpr condition = null;
 
         switch (sym) {
             // ----- assignment, method call, in- or decrement
@@ -520,7 +523,7 @@ public final class RecursiveDescentParser {
             case if_:
                 scan();
                 check(lpar);
-                MJExpr condition = Condition();
+                condition = Condition();
                 check(rpar);
 
                 check(lbrace);
@@ -541,9 +544,10 @@ public final class RecursiveDescentParser {
             case while_:
                 scan();
                 check(lpar);
-                Condition();
+                condition = Condition();
                 check(rpar);
-                Statement();
+                MJStatement body = Statement();
+                statement = new MJWhile(condition, body);
                 break;
             // ----- "break" ";"
             case break_:
@@ -587,7 +591,7 @@ public final class RecursiveDescentParser {
                 check(semicolon);
                 break;
             case lbrace:
-                Block();
+                statement = Block();
                 break;
             case semicolon:
                 scan();
@@ -804,40 +808,6 @@ public final class RecursiveDescentParser {
             }
         }
         return t.str;
-    }
-
-    /** Assignop = "=" | "+=" | "-=" | "*=" | "/=" | "%=" . */
-    private OpCode Assignop() {
-        OpCode op = OpCode.store;
-        switch (sym) {
-            case assign:
-                op = OpCode.store;
-                scan();
-                break;
-            case plusas:
-                op = OpCode.add;
-                scan();
-                break;
-            case minusas:
-                op = OpCode.sub;
-                scan();
-                break;
-            case timesas:
-                op = OpCode.mul;
-                scan();
-                break;
-            case slashas:
-                op = OpCode.div;
-                scan();
-                break;
-            case remas:
-                op = OpCode.rem;
-                scan();
-                break;
-            default:
-                throw new Error("invalid assign operation");
-        }
-        return op;
     }
 
     /** Relop = "==" | "!=" | ">" | ">=" | "<" | "<=" . */
