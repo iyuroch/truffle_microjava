@@ -24,7 +24,8 @@ public class MJRuntime {
 // parseRD(mjProgramRD);
 // parseRD(ifProgram);
 // parseRD(whileProgram);
-        parseRD(whileIfProgram);
+// parseRD(whileIfProgram);
+        parseRD(contbreakProgram);
     }
 
     static String mySample = "program Sample {" + "void main() {print(0);print(1);} " + "}";
@@ -96,12 +97,15 @@ public class MJRuntime {
 
     static String contbreakProgram = "program P {"//
                     + "             void main () int i;{ " //
-                    + "                 i = 0;"//
+                    + "                 i = 1;"//
                     + "                 while(i<20) {" //
-                    + "                     if (i % 2) {" //
+                    + "                     i = i + 1;" //
+                    + "                     if (i % 2 == 0) {" //
                     + "                         continue;" //
-                    + "                     }"//
-                    + "                     print(10);" //
+                    + "                     }" //
+                    + "                     if (i % 15 == 0) {break;}"//
+                    + "                     print(i); " //
+                    + "                     " //
                     + "                 }"//
                     + "             }"//
                     + "}";

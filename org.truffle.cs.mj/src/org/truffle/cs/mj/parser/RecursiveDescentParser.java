@@ -47,14 +47,17 @@ import java.util.Optional;
 import org.truffle.cs.mj.nodes.MJBinary;
 import org.truffle.cs.mj.nodes.MJBinaryFactory;
 import org.truffle.cs.mj.nodes.MJBlock;
+import org.truffle.cs.mj.nodes.MJBreak;
 import org.truffle.cs.mj.nodes.MJCallable;
 import org.truffle.cs.mj.nodes.MJConstNodeGen;
+import org.truffle.cs.mj.nodes.MJContinue;
 import org.truffle.cs.mj.nodes.MJExpr;
 import org.truffle.cs.mj.nodes.MJIf;
 import org.truffle.cs.mj.nodes.MJMethod;
 import org.truffle.cs.mj.nodes.MJPrint;
 import org.truffle.cs.mj.nodes.MJReadVar;
 import org.truffle.cs.mj.nodes.MJRepeat;
+import org.truffle.cs.mj.nodes.MJReturnable;
 import org.truffle.cs.mj.nodes.MJStatement;
 import org.truffle.cs.mj.nodes.MJWhile;
 import org.truffle.cs.mj.nodes.MJWriteVar;
@@ -483,15 +486,20 @@ public final class RecursiveDescentParser {
             // ----- Designator ( Assignop Expr | ActPars | "++" | "--" ) ";"
             case ident:
                 String des = Designator();
+                FrameSlot slot;
 
                 switch (sym) {
                     case assign:
-                        FrameSlot slot = currentFrameDescriptor.findFrameSlot(des);
+                        slot = currentFrameDescriptor.findFrameSlot(des);
                         scan();
                         statement = new MJWriteVar(Expr(), slot);
                         break;
                     // TODO: add this
                     case plusas:
+                        slot = currentFrameDescriptor.findFrameSlot(des);
+                        MJExpr var = new MJReadVar(slot);
+                        MJExpr addition = MJBinaryFactory.AddOpNodeGen.create(var, Term());
+                        statement = new MJWriteVar(addition, slot);
                     case minusas:
                     case timesas:
                     case slashas:
@@ -499,14 +507,7 @@ public final class RecursiveDescentParser {
                         throw new Error("Unimplemented");
                     // break;
                     case lpar:
-                        // This is case when we have custom function call
-                        // need to check if we have this method
-                        // and if yes - add arguments to it
-                        for (MJMethod method : functions) {
-                            if (method.getName().equals(des)) {
-                                statement = new MJCallable(ActPars(), method);
-                            }
-                        }
+                        statement = CustomMethod(des);
                         break;
                     case pplus:
                         scan();
@@ -526,17 +527,12 @@ public final class RecursiveDescentParser {
                 condition = Condition();
                 check(rpar);
 
-                check(lbrace);
-                MJStatement truePath = Statement();
-                check(rbrace);
-
+                MJStatement truePath = Block();
                 MJStatement falsePath = null;
 
                 if (sym == else_) {
                     scan();
-                    check(lbrace);
-                    falsePath = Statement();
-                    check(rbrace);
+                    falsePath = Block();
                 }
                 statement = new MJIf(condition, truePath, falsePath);
                 break;
@@ -553,18 +549,20 @@ public final class RecursiveDescentParser {
             case break_:
                 scan();
                 check(semicolon);
+                statement = new MJBreak();
                 break;
 
             // ----- "break" ";"
             case continue_:
                 scan();
                 check(semicolon);
+                statement = new MJContinue();
                 break;
             // ----- "return" [ Expr ] ";"
             case return_:
                 scan();
                 if (sym != semicolon) {
-                    Expr();
+                    statement = new MJReturnable(Expr());
                 } else {
                     break;
                 }
@@ -601,6 +599,15 @@ public final class RecursiveDescentParser {
         }
 
         return statement;
+    }
+
+    private MJStatement CustomMethod(String methodName) {
+        for (MJMethod method : functions) {
+            if (method.getName().equals(methodName)) {
+                return new MJCallable(ActPars(), method);
+            }
+        }
+        return null;
     }
 
     /**
@@ -756,11 +763,13 @@ public final class RecursiveDescentParser {
                 check(rpar);
                 return null;
             case ident:
-                String varname = Designator();
+                String des = Designator();
                 if (sym == lpar) {
+                    // it can be either variable or method call
+                    factor = CustomMethod(des);
                     ActPars();
                 } else {
-                    FrameSlot slot = currentFrameDescriptor.findFrameSlot(varname);
+                    FrameSlot slot = currentFrameDescriptor.findFrameSlot(des);
                     factor = new MJReadVar(slot);
                 }
                 break;

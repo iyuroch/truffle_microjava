@@ -21,17 +21,13 @@ public class MJRepeat extends Node implements RepeatingNode {
         if (!(boolean) this.condition.execute(frame)) {
             return false;
         }
-// try {
-// this.body.execute(frame);
-// return true;
-// } catch (SLContinueException ex) {
-// return true;
-// } catch (SLBreakException ex) {
-// return false;
-// }
-// return false;
-        this.body.execute(frame);
-        return true;
+        try {
+            this.body.execute(frame);
+            return true;
+        } catch (MJContinueException ex) {
+            return true;
+        } catch (MJBreakException ex) {
+            return false;
+        }
     }
-
 }
