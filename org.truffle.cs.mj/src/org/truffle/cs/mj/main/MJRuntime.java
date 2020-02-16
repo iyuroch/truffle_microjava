@@ -25,7 +25,10 @@ public class MJRuntime {
 // parseRD(ifProgram);
 // parseRD(whileProgram);
 // parseRD(whileIfProgram);
-        parseRD(contbreakProgram);
+// parseRD(divAlgorithm);
+// parseRD(recurseProgram);
+// parseRD(recursiveProgram2);
+        parseRD(divAlgorithm);
     }
 
     static String mySample = "program Sample {" + "void main() {print(0);print(1);} " + "}";
@@ -110,6 +113,35 @@ public class MJRuntime {
                     + "             }"//
                     + "}";
 
+    static String returnProgram = "program P {"//
+                    + "             void foo() {return 3;}" //
+                    + "             void main () int i;{ " //
+                    + "                 print(432+foo());"  //
+                    + "             }"//
+                    + "}";
+
+    static String recurseProgram = "program P {"//
+                    + "             void foo(int a) {print(a); " + "if (a < 0) {" + "return 0;" + "}"//
+                    + "                 foo(a - 5);" //
+                    + "             }" //
+                    + "             void main ()int p;{ " //
+                    + "                 p = foo(100);"  //
+                    + "             }"//
+                    + "}";
+
+    static String recursiveProgram2 = "program p {"//
+                    + "               void foo(int i) {"//
+                    + "                        print(i);"//
+                    + "                        if(i == 5){"//
+                    + "                             return 100;"//
+                    + "                         }"//
+                    + "                         return foo(i-1);"//
+                    + "                    }"//
+                    + "               void main(){"//
+                    + "                 print(foo(100));"//
+                    + "                 }" //
+                    + "             }";//
+
     static String divAlgorithm = "program DivAlgorithm {"//
                     + "             int flipSign(int a) int neg;int tmp; int tmpA; {" //
                     + "                 neg = 0;"//
@@ -123,8 +155,8 @@ public class MJRuntime {
                     + "                 while(tmpA != 0) {"//
                     + "                     neg = neg + tmp;"//
                     + "                     tmpA = tmpA + tmp;"//
-                    // + " print(tmpA);"//
-                    // + " print(neg);"//
+                    + "                     print(tmpA);"//
+                    + "                     print(neg);"//
                     + "                 }"//
                     + "                 return neg;"//
                     + "             }"//
@@ -159,8 +191,8 @@ public class MJRuntime {
         TruffleRuntime runtime = Truffle.getRuntime();
 // System.out.println("Calling main function...");
         CallTarget callTarget = runtime.createCallTarget(parser.getMain());
-        for (int i = 0; i < 1; i++) {
-            callTarget.call();
+        for (int i = 0; i < 100; i++) {
+            callTarget.call(5, 10);
         }
 // callTarget.call();
     }

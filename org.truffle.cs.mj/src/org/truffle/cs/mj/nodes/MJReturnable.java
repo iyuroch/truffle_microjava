@@ -5,19 +5,14 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 public class MJReturnable extends MJStatement {
     @Child MJExpr expression;
 
-    public MJReturnable(MJExpr expression) {
+    public MJReturnable(MJExpr mjExpr) {
         super();
-        this.expression = expression;
+        this.expression = mjExpr;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        try {
-            this.expression.execute(frame);
-        } catch (MJReturnableException ex) {
-            return ex.getResult();
-        }
-        return null;
+        throw new MJReturnableException(this.expression.execute(frame));
     }
 
 }

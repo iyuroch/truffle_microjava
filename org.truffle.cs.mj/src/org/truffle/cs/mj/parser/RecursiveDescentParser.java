@@ -48,6 +48,7 @@ import org.truffle.cs.mj.nodes.MJBinary;
 import org.truffle.cs.mj.nodes.MJBinaryFactory;
 import org.truffle.cs.mj.nodes.MJBlock;
 import org.truffle.cs.mj.nodes.MJBreak;
+import org.truffle.cs.mj.nodes.MJBuiltinFactory;
 import org.truffle.cs.mj.nodes.MJCallable;
 import org.truffle.cs.mj.nodes.MJConstNodeGen;
 import org.truffle.cs.mj.nodes.MJContinue;
@@ -58,6 +59,8 @@ import org.truffle.cs.mj.nodes.MJPrint;
 import org.truffle.cs.mj.nodes.MJReadVar;
 import org.truffle.cs.mj.nodes.MJRepeat;
 import org.truffle.cs.mj.nodes.MJReturnable;
+import org.truffle.cs.mj.nodes.MJReturnableCallable;
+import org.truffle.cs.mj.nodes.MJReturnableException;
 import org.truffle.cs.mj.nodes.MJStatement;
 import org.truffle.cs.mj.nodes.MJWhile;
 import org.truffle.cs.mj.nodes.MJWriteVar;
@@ -380,7 +383,9 @@ public final class RecursiveDescentParser {
     private MJMethod MethodDecl() {
         currentFrameDescriptor = new FrameDescriptor();
         FrameSlotKind returnType = null;
+
         if (sym == ident) {
+            // TODO: remove after type check fix
             returnType = Type();
         } else if (sym == void_) {
             // if return type is void
@@ -389,7 +394,9 @@ public final class RecursiveDescentParser {
             throw new Error("Method declaration");
         }
         check(ident);
-        String methodName = t.str;
+
+        currentFun = new MJMethod(t.str, null, currentFrameDescriptor, returnType);
+        functions.add(currentFun);
 
         check(lpar);
         if (sym == ident) {
@@ -400,11 +407,8 @@ public final class RecursiveDescentParser {
             VarDecl();
         }
 
-        MJBlock block = Block();
-        currentFun = new MJMethod(methodName, block, currentFrameDescriptor, returnType);
+        currentFun.setBody(Block());
 
-        functions.add(currentFun);
-        parameterNames = null;
         return currentFun;
     }
 
@@ -489,6 +493,9 @@ public final class RecursiveDescentParser {
                 FrameSlot slot;
 
                 switch (sym) {
+                    case lpar:
+                        statement = CustomMethod(des);
+                        break;
                     case assign:
                         slot = currentFrameDescriptor.findFrameSlot(des);
                         scan();
@@ -500,15 +507,13 @@ public final class RecursiveDescentParser {
                         MJExpr var = new MJReadVar(slot);
                         MJExpr addition = MJBinaryFactory.AddOpNodeGen.create(var, Term());
                         statement = new MJWriteVar(addition, slot);
+                        break;
                     case minusas:
                     case timesas:
                     case slashas:
                     case remas:
                         throw new Error("Unimplemented");
                     // break;
-                    case lpar:
-                        statement = CustomMethod(des);
-                        break;
                     case pplus:
                         scan();
                         break;
@@ -601,7 +606,8 @@ public final class RecursiveDescentParser {
         return statement;
     }
 
-    private MJStatement CustomMethod(String methodName) {
+    // TODO: replace with getFunction
+    private MJCallable CustomMethod(String methodName) {
         for (MJMethod method : functions) {
             if (method.getName().equals(methodName)) {
                 return new MJCallable(ActPars(), method);
@@ -708,7 +714,7 @@ public final class RecursiveDescentParser {
                 expr = MJBinaryFactory.AddOpNodeGen.create(expr, Term());
             } else if (sym == minus) {
                 scan();
-                expr = MJBinaryFactory.AddOpNodeGen.create(expr, Term());
+                expr = MJBinaryFactory.DiffOpNodeGen.create(expr, Term());
             }
         }
 
@@ -759,15 +765,14 @@ public final class RecursiveDescentParser {
             case abs:
                 scan();
                 check(lpar);
-                Expr();
+                factor = MJBuiltinFactory.AbsNodeGen.create(Expr());
                 check(rpar);
-                return null;
+                break;
             case ident:
                 String des = Designator();
                 if (sym == lpar) {
                     // it can be either variable or method call
-                    factor = CustomMethod(des);
-                    ActPars();
+                    factor = new MJReturnableCallable(CustomMethod(des));
                 } else {
                     FrameSlot slot = currentFrameDescriptor.findFrameSlot(des);
                     factor = new MJReadVar(slot);

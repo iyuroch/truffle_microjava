@@ -25,6 +25,10 @@ public class MJMethod extends RootNode {
         this.name = name;
     }
 
+    public void setBody(MJBlock body) {
+        this.body = body;
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
         int len = frame.getArguments().length;
